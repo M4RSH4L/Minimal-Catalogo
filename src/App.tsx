@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2 } from 'lucide-react';
 
+interface AppProps {
+  backgroundUrl?: string;
+}
+
 interface Product {
   id: number;
   name: string;
@@ -107,7 +111,7 @@ const createAudioContext = () => {
   };
 };
 
-function App() {
+function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920" }: AppProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("Top Body");
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');

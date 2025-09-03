@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2, Settings, Palette, Check } from 'lucide-react';
 
 interface AppProps {
@@ -123,6 +124,14 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [currentBackground, setCurrentBackground] = useState(backgroundUrl || "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920");
   const [backgroundInput, setBackgroundInput] = useState("");
+  
+  // Touch/swipe state
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initAudio = () => {
@@ -148,6 +157,86 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, []);
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Only enable swipe on mobile (screen width < 768px)
+    if (window.innerWidth >= 768) return;
+    
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsSwipeActive(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 768 || !touchStart || isTransitioning) return;
+    
+    const currentTouch = e.targetTouches[0].clientX;
+    const diff = currentTouch - touchStart;
+    
+    // Apply resistance to make swipe feel natural
+    const resistance = 0.6;
+    const offset = diff * resistance;
+    
+    setSwipeOffset(offset);
+    setTouchEnd(currentTouch);
+  };
+
+  const handleTouchEnd = () => {
+    if (window.innerWidth >= 768 || !touchStart || !touchEnd || isTransitioning) {
+      resetSwipe();
+      return;
+    }
+
+    const distance = touchEnd - touchStart;
+    const cardWidth = cardRef.current?.offsetWidth || 300;
+    const threshold = cardWidth * 0.4; // 40% threshold
+    
+    const isLeftSwipe = distance < -threshold;
+    const isRightSwipe = distance > threshold;
+
+    if (isLeftSwipe) {
+      // Swipe left - go to next product
+      setSwipeDirection('left');
+      animateSwipeOut('left');
+      setTimeout(() => {
+        nextProduct();
+        resetSwipe();
+      }, 300);
+    } else if (isRightSwipe) {
+      // Swipe right - go to previous product
+      setSwipeDirection('right');
+      animateSwipeOut('right');
+      setTimeout(() => {
+        prevProduct();
+        resetSwipe();
+      }, 300);
+    } else {
+      // Return to original position
+      animateSwipeReturn();
+    }
+  };
+
+  const animateSwipeOut = (direction: 'left' | 'right') => {
+    const cardWidth = cardRef.current?.offsetWidth || 300;
+    const targetOffset = direction === 'left' ? -cardWidth : cardWidth;
+    setSwipeOffset(targetOffset);
+  };
+
+  const animateSwipeReturn = () => {
+    setSwipeOffset(0);
+    setTimeout(() => {
+      resetSwipe();
+    }, 300);
+  };
+
+  const resetSwipe = () => {
+    setTouchStart(null);
+    setTouchEnd(null);
+    setSwipeOffset(0);
+    setIsSwipeActive(false);
+    setSwipeDirection(null);
+  };
 
   const nextProduct = () => {
     if (isTransitioning) return;
@@ -528,14 +617,42 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                 onClick={prevProduct}
                 disabled={isTransitioning}
                 aria-label="View previous product"
-                className="p-2 sm:p-4 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out z-20 shadow-2xl transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="hidden sm:flex p-2 sm:p-4 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out z-20 shadow-2xl transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 items-center justify-center"
               >
                 <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
               </button>
 
               {/* Mobile: Single Product View */}
-              <div className="block sm:hidden flex-1">
-                <ProductCard product={currentProduct} isMain={true} />
+              <div className="block sm:hidden flex-1 relative">
+                <div
+                  ref={cardRef}
+                  className="transition-transform duration-300 ease-out"
+                  style={{
+                    transform: `translateX(${swipeOffset}px)`,
+                    opacity: Math.max(0.3, 1 - Math.abs(swipeOffset) / 200)
+                  }}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <ProductCard product={currentProduct} isMain={true} />
+                </div>
+                
+                {/* Swipe Indicators */}
+                {isSwipeActive && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-4">
+                    <div className={`transition-opacity duration-200 ${swipeOffset > 50 ? 'opacity-100' : 'opacity-0'}`}>
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
+                        <ChevronLeft className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                    <div className={`transition-opacity duration-200 ${swipeOffset < -50 ? 'opacity-100' : 'opacity-0'}`}>
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
+                        <ChevronRight className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Desktop: Three Product View */}
@@ -561,7 +678,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                 onClick={nextProduct}
                 disabled={isTransitioning}
                 aria-label="View next product"
-                className="p-2 sm:p-4 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out z-20 shadow-2xl transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="hidden sm:flex p-2 sm:p-4 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out z-20 shadow-2xl transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 items-center justify-center"
               >
                 <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
               </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2, Settings, Palette, Check } from 'lucide-react';
 
 interface AppProps {
   backgroundUrl?: string;
@@ -120,6 +120,9 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [audioContext, setAudioContext] = useState<any>(null);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [currentBackground, setCurrentBackground] = useState(backgroundUrl || "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920");
+  const [backgroundInput, setBackgroundInput] = useState("");
 
   useEffect(() => {
     const initAudio = () => {
@@ -262,6 +265,48 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     window.open(whatsappUrl, '_blank');
   };
 
+  const applyBackground = () => {
+    if (backgroundInput.trim()) {
+      audioContext?.playClickSound();
+      setCurrentBackground(backgroundInput.trim());
+      setBackgroundInput("");
+      setIsCustomizerOpen(false);
+    }
+  };
+
+  const resetBackground = () => {
+    audioContext?.playClickSound();
+    setCurrentBackground("https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920");
+    setBackgroundInput("");
+  };
+
+  const presetBackgrounds = [
+    {
+      name: "Default",
+      url: "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920"
+    },
+    {
+      name: "Urban",
+      url: "https://images.pexels.com/photos/1105766/pexels-photo-1105766.jpeg?auto=compress&cs=tinysrgb&w=1920"
+    },
+    {
+      name: "Nature",
+      url: "https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg?auto=compress&cs=tinysrgb&w=1920"
+    },
+    {
+      name: "Purple Gradient",
+      url: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    },
+    {
+      name: "Ocean Gradient",
+      url: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    },
+    {
+      name: "Sunset Gradient",
+      url: "linear-gradient(135deg, #ff6b6b 0%, #ffa726 50%, #ffcc02 100%)"
+    }
+  ];
+
   const currentProduct = products[currentIndex];
   const sideProducts = [
     products[(currentIndex - 1 + products.length) % products.length],
@@ -364,7 +409,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-out"
         style={{
-          backgroundImage: `url('https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920')`
+          backgroundImage: currentBackground.includes('gradient') ? currentBackground : `url('${currentBackground}')`
         }}
       >
         <div className="absolute inset-0 bg-black/25 backdrop-blur-[1px]"></div>
@@ -410,8 +455,21 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
           </div>
 
           {/* View Controls */}
-          <div className="flex items-center space-x-2 sm:space-x-4" role="toolbar" aria-label="View and cart controls">
+          <div className="flex items-center space-x-2 sm:space-x-3" role="toolbar" aria-label="View and cart controls">
             <h3 className="sr-only">View Options</h3>
+            
+            {/* Background Customizer Button */}
+            <button
+              onClick={() => {
+                audioContext?.playClickSound();
+                setIsCustomizerOpen(true);
+              }}
+              aria-label="Customize background"
+              className="bg-white/10 backdrop-blur-2xl rounded-full p-2 sm:p-3 border border-white/15 text-white hover:bg-white/15 transition-all duration-400 ease-out shadow-2xl transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            
             <div className="flex space-x-1 sm:space-x-2 bg-white/10 backdrop-blur-2xl rounded-full p-1 sm:p-2 border border-white/15 shadow-2xl">
               <button
                 onClick={toggleViewMode}
@@ -595,6 +653,105 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
           </nav>
         )}
       </div>
+
+      {/* Background Customizer Modal */}
+      {isCustomizerOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="customizer-title">
+          <div className="bg-white/12 backdrop-blur-2xl rounded-3xl border border-white/25 p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl transform transition-all duration-500 ease-out scale-100 animate-slideUp" role="document">
+            <div className="flex justify-between items-center mb-6">
+              <h2 id="customizer-title" className="text-2xl font-bold text-white flex items-center space-x-2">
+                <Palette className="w-6 h-6" />
+                <span>Customize Background</span>
+              </h2>
+              <button
+                onClick={() => {
+                  audioContext?.playClickSound();
+                  setIsCustomizerOpen(false);
+                  setBackgroundInput("");
+                }}
+                aria-label="Close background customizer"
+                className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Custom URL Input */}
+            <div className="mb-6">
+              <label htmlFor="background-input" className="block text-white font-medium mb-3">
+                Custom Background URL or CSS Gradient
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  id="background-input"
+                  type="text"
+                  value={backgroundInput}
+                  onChange={(e) => setBackgroundInput(e.target.value)}
+                  placeholder="Enter image URL or CSS gradient..."
+                  className="flex-1 bg-white/10 backdrop-blur-xl rounded-full px-4 py-3 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-300 ease-out"
+                />
+                <button
+                  onClick={applyBackground}
+                  disabled={!backgroundInput.trim()}
+                  aria-label="Apply custom background"
+                  className="bg-white/15 backdrop-blur-xl rounded-full px-4 py-3 border border-white/20 text-white hover:bg-white/20 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <Check className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-white/60 text-sm mt-2">
+                Examples: Image URL, linear-gradient(135deg, #667eea 0%, #764ba2 100%), radial-gradient(circle, #ff6b6b, #4ecdc4)
+              </p>
+            </div>
+
+            {/* Preset Backgrounds */}
+            <div className="mb-6">
+              <h3 className="text-white font-medium mb-3">Preset Backgrounds</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {presetBackgrounds.map((preset, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      audioContext?.playClickSound();
+                      setCurrentBackground(preset.url);
+                    }}
+                    className={`relative h-20 rounded-xl border-2 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 overflow-hidden ${
+                      currentBackground === preset.url
+                        ? 'border-white/60 ring-2 ring-white/30'
+                        : 'border-white/20 hover:border-white/40'
+                    }`}
+                    style={{
+                      backgroundImage: preset.url.includes('gradient') ? preset.url : `url('${preset.url}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-white font-medium text-sm bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
+                        {preset.name}
+                      </span>
+                    </div>
+                    {currentBackground === preset.url && (
+                      <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm rounded-full p-1">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={resetBackground}
+              className="w-full bg-white/10 backdrop-blur-xl rounded-full px-6 py-3 border border-white/20 text-white font-medium hover:bg-white/15 transition-all duration-400 ease-out transform hover:scale-[1.01] active:scale-[0.99] shadow-lg"
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Shopping Cart Modal */}
       {isCartOpen && (

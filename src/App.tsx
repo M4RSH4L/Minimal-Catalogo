@@ -174,9 +174,9 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     const currentTouch = e.targetTouches[0].clientX;
     const diff = currentTouch - touchStart;
     
-    // Apply resistance to make swipe feel natural
-    const resistance = 0.6;
-    const offset = diff * resistance;
+    // Limit swipe distance to prevent excessive movement
+    const maxSwipe = 150;
+    const offset = Math.max(-maxSwipe, Math.min(maxSwipe, diff));
     
     setSwipeOffset(offset);
     setTouchEnd(currentTouch);
@@ -197,20 +197,16 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
     if (isLeftSwipe) {
       // Swipe left - go to next product
-      setSwipeDirection('left');
       animateSwipeOut('left');
       setTimeout(() => {
         nextProduct();
-        resetSwipe();
-      }, 300);
+      }, 250);
     } else if (isRightSwipe) {
       // Swipe right - go to previous product
-      setSwipeDirection('right');
       animateSwipeOut('right');
       setTimeout(() => {
         prevProduct();
-        resetSwipe();
-      }, 300);
+      }, 250);
     } else {
       // Return to original position
       animateSwipeReturn();
@@ -219,15 +215,19 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
   const animateSwipeOut = (direction: 'left' | 'right') => {
     const cardWidth = cardRef.current?.offsetWidth || 300;
-    const targetOffset = direction === 'left' ? -cardWidth : cardWidth;
+    const targetOffset = direction === 'left' ? -cardWidth * 1.2 : cardWidth * 1.2;
     setSwipeOffset(targetOffset);
+    
+    setTimeout(() => {
+      resetSwipe();
+    }, 250);
   };
 
   const animateSwipeReturn = () => {
     setSwipeOffset(0);
     setTimeout(() => {
       resetSwipe();
-    }, 300);
+    }, 200);
   };
 
   const resetSwipe = () => {
@@ -235,7 +235,6 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     setTouchEnd(null);
     setSwipeOffset(0);
     setIsSwipeActive(false);
-    setSwipeDirection(null);
   };
 
   const nextProduct = () => {
@@ -626,10 +625,10 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
               <div className="block sm:hidden flex-1 relative">
                 <div
                   ref={cardRef}
-                  className="transition-transform duration-300 ease-out"
+                  className={`transition-all ease-out ${isSwipeActive ? 'duration-0' : 'duration-300'}`}
                   style={{
                     transform: `translateX(${swipeOffset}px)`,
-                    opacity: Math.max(0.3, 1 - Math.abs(swipeOffset) / 200)
+                    opacity: isSwipeActive ? Math.max(0.5, 1 - Math.abs(swipeOffset) / 150) : 1
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -640,19 +639,41 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                 
                 {/* Swipe Indicators */}
                 {isSwipeActive && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-4">
-                    <div className={`transition-opacity duration-200 ${swipeOffset > 50 ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-8">
+                    <div className={`transition-all duration-200 ${swipeOffset > 30 ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
                       <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
                         <ChevronLeft className="w-6 h-6 text-white" />
                       </div>
                     </div>
-                    <div className={`transition-opacity duration-200 ${swipeOffset < -50 ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`transition-all duration-200 ${swipeOffset < -30 ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
                       <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
                         <ChevronRight className="w-6 h-6 text-white" />
                       </div>
                     </div>
                   </div>
                 )}
+                
+                {/* Mobile Navigation Arrows */}
+                <div className="absolute inset-y-0 left-0 flex items-center">
+                  <button
+                    onClick={prevProduct}
+                    disabled={isTransitioning}
+                    aria-label="View previous product"
+                    className="p-3 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ml-2"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    onClick={nextProduct}
+                    disabled={isTransitioning}
+                    aria-label="View next product"
+                    className="p-3 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mr-2"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Desktop: Three Product View */}

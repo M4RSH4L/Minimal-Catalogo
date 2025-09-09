@@ -79,6 +79,45 @@ const products: Product[] = [
 
 const categories = ["Full body", "Top Body", "Head", "Pants", "Foot"];
 
+const HomeSection = () => (
+  <section className="flex-1 flex items-center justify-center px-4 relative overflow-hidden">
+    {/* Floating 3D Object */}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="relative">
+        {/* Main 3D Cube */}
+        <div className="w-32 h-32 lg:w-48 lg:h-48 relative transform-gpu animate-float">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl transform rotate-12 hover:rotate-6 transition-transform duration-1000 ease-out">
+            <div className="absolute inset-4 bg-gradient-to-tr from-blue-400/30 to-purple-500/30 rounded-2xl animate-pulse"></div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-white/15 to-white/5 backdrop-blur-xl rounded-3xl border border-white/15 shadow-xl transform -rotate-6 hover:rotate-0 transition-transform duration-1000 ease-out delay-200">
+            <div className="absolute inset-4 bg-gradient-to-bl from-purple-400/30 to-pink-500/30 rounded-2xl animate-pulse delay-300"></div>
+          </div>
+        </div>
+        
+        {/* Floating Particles */}
+        <div className="absolute -top-8 -left-8 w-4 h-4 bg-white/40 rounded-full animate-bounce delay-100"></div>
+        <div className="absolute -bottom-6 -right-6 w-3 h-3 bg-white/30 rounded-full animate-bounce delay-500"></div>
+        <div className="absolute top-12 -right-12 w-2 h-2 bg-white/50 rounded-full animate-bounce delay-700"></div>
+      </div>
+    </div>
+
+    {/* Content */}
+    <div className="text-center z-10 max-w-2xl mx-auto">
+      <h1 className="text-5xl lg:text-7xl font-black text-white mb-6 tracking-tight">
+        <span className="bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent">
+          VirtualFit
+        </span>
+      </h1>
+      <p className="text-xl lg:text-2xl text-white/80 font-light tracking-wide leading-relaxed">
+        The future of fashion is here
+      </p>
+      <div className="mt-8 flex justify-center">
+        <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+      </div>
+    </div>
+  </section>
+);
+
 // Audio context for subtle sounds
 const createAudioContext = () => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -114,7 +153,7 @@ const createAudioContext = () => {
 
 function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920" }: AppProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState("Top Body");
+  const [selectedCategory, setSelectedCategory] = useState("Home");
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -174,9 +213,8 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     const currentTouch = e.targetTouches[0].clientX;
     const diff = currentTouch - touchStart;
     
-    // Limit swipe distance to prevent excessive movement
-    const maxSwipe = 150;
-    const offset = Math.max(-maxSwipe, Math.min(maxSwipe, diff));
+    // Allow more natural movement
+    const offset = diff * 0.8;
     
     setSwipeOffset(offset);
     setTouchEnd(currentTouch);
@@ -215,7 +253,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
   const animateSwipeOut = (direction: 'left' | 'right') => {
     const cardWidth = cardRef.current?.offsetWidth || 300;
-    const targetOffset = direction === 'left' ? -cardWidth * 1.2 : cardWidth * 1.2;
+    const targetOffset = direction === 'left' ? -cardWidth : cardWidth;
     setSwipeOffset(targetOffset);
     
     setTimeout(() => {
@@ -512,7 +550,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
         <header className="flex justify-center pt-4 sm:pt-8 pb-4 sm:pb-6 px-4" role="banner">
           <h2 className="sr-only">Product Categories Navigation</h2>
           <nav className="flex space-x-1 bg-white/10 backdrop-blur-2xl rounded-full p-1 sm:p-2 border border-white/15 shadow-2xl overflow-x-auto">
-            {categories.map((category, index) => (
+            {["Home", ...categories].map((category, index) => (
               <button
                 key={category}
                 onClick={() => {
@@ -535,7 +573,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
         </header>
 
         {/* Top Controls */}
-        <div className="flex justify-between items-center px-4 sm:px-8 mb-4 sm:mb-8">
+        <div className={`flex justify-between items-center px-4 sm:px-8 mb-4 sm:mb-8 ${selectedCategory === "Home" ? "opacity-0 pointer-events-none" : "opacity-100"} transition-all duration-500 ease-out`}>
           {/* Brand */}
           <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-2xl rounded-full px-3 sm:px-6 py-2 sm:py-3 border border-white/15 shadow-2xl transform hover:scale-[1.01] transition-all duration-400 ease-out" role="banner">
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -606,8 +644,12 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
         {/* Main Content Area */}
         <main className="flex-1 flex items-center justify-center px-4 sm:px-8" role="main">
-          <h2 className="sr-only">{selectedCategory} Products Catalog</h2>
-          {viewMode === 'carousel' ? (
+          {selectedCategory === "Home" ? (
+            <HomeSection />
+          ) : (
+            <>
+              <h2 className="sr-only">{selectedCategory} Products Catalog</h2>
+              {viewMode === 'carousel' ? (
             /* Carousel View */
             <section className="flex items-center justify-center space-x-2 sm:space-x-8 max-w-7xl w-full" aria-label="Product carousel">
               
@@ -623,56 +665,41 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
               {/* Mobile: Single Product View */}
               <div className="block sm:hidden flex-1 relative">
+                {/* Next Card (Right) */}
+                <div
+                  className="absolute inset-0 z-0"
+                  style={{
+                    transform: `translateX(${100 + (swipeOffset * 0.3)}%)`,
+                    opacity: Math.max(0, Math.min(1, (-swipeOffset) / 100))
+                  }}
+                >
+                  <ProductCard product={sideProducts[1]} isMain={true} />
+                </div>
+                
+                {/* Previous Card (Left) */}
+                <div
+                  className="absolute inset-0 z-0"
+                  style={{
+                    transform: `translateX(${-100 + (swipeOffset * 0.3)}%)`,
+                    opacity: Math.max(0, Math.min(1, swipeOffset / 100))
+                  }}
+                >
+                  <ProductCard product={sideProducts[0]} isMain={true} />
+                </div>
+                
+                {/* Current Card */}
                 <div
                   ref={cardRef}
-                  className={`transition-all ease-out ${isSwipeActive ? 'duration-0' : 'duration-300'}`}
+                  className={`relative z-10 transition-all ease-out ${isSwipeActive ? 'duration-0' : 'duration-300'}`}
                   style={{
-                    transform: `translateX(${swipeOffset}px)`,
-                    opacity: isSwipeActive ? Math.max(0.5, 1 - Math.abs(swipeOffset) / 150) : 1
+                    transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.05}deg)`,
+                    opacity: Math.max(0.3, 1 - Math.abs(swipeOffset) / 200)
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
                   <ProductCard product={currentProduct} isMain={true} />
-                </div>
-                
-                {/* Swipe Indicators */}
-                {isSwipeActive && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-8">
-                    <div className={`transition-all duration-200 ${swipeOffset > 30 ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
-                        <ChevronLeft className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                    <div className={`transition-all duration-200 ${swipeOffset < -30 ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 border border-white/30">
-                        <ChevronRight className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Mobile Navigation Arrows */}
-                <div className="absolute inset-y-0 left-0 flex items-center">
-                  <button
-                    onClick={prevProduct}
-                    disabled={isTransitioning}
-                    aria-label="View previous product"
-                    className="p-3 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ml-2"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="absolute inset-y-0 right-0 flex items-center">
-                  <button
-                    onClick={nextProduct}
-                    disabled={isTransitioning}
-                    aria-label="View next product"
-                    className="p-3 bg-white/10 backdrop-blur-2xl rounded-full border border-white/15 text-white hover:bg-white/15 transition-all duration-300 ease-out shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mr-2"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
                 </div>
               </div>
 
@@ -766,11 +793,13 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                 ))}
               </div>
             </section>
+              )}
+            </>
           )}
         </main>
 
         {/* Bottom Navigation Dots - Only show in carousel mode */}
-        {viewMode === 'carousel' && (
+        {viewMode === 'carousel' && selectedCategory !== "Home" && (
           <nav className="flex justify-center space-x-2 pb-6 sm:pb-8 px-4" aria-label="Product navigation" role="tablist">
             <h3 className="sr-only">Product Navigation Dots</h3>
             {products.map((_, index) => (
@@ -1021,6 +1050,25 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
         
         .animate-slideUp {
           animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          25% {
+            transform: translateY(-10px) rotate(1deg);
+          }
+          50% {
+            transform: translateY(-5px) rotate(-1deg);
+          }
+          75% {
+            transform: translateY(-15px) rotate(0.5deg);
+          }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
         }
       `}</style>
     </div>

@@ -81,6 +81,21 @@ const categories = ["Full body", "Top Body", "Head", "Pants", "Foot"];
 
 const HomeSection = () => (
   <section className="flex-1 flex items-center justify-center px-4 relative overflow-hidden">
+    {/* Background Customizer Button - Fixed Position */}
+    <div className="absolute top-8 right-8 z-20">
+      <button
+        onClick={() => {
+          // This will be handled by the parent component
+          const event = new CustomEvent('openCustomizer');
+          window.dispatchEvent(event);
+        }}
+        aria-label="Customize background"
+        className="bg-white/10 backdrop-blur-2xl rounded-full p-3 lg:p-4 border border-white/15 text-white hover:bg-white/15 transition-all duration-400 ease-out shadow-2xl transform hover:scale-[1.05] active:scale-[0.95]"
+      >
+        <Palette className="w-5 h-5 lg:w-6 lg:h-6" />
+      </button>
+    </div>
+
     {/* Floating 3D Object */}
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="relative">
@@ -193,6 +208,17 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Handle customizer event from Home section
+  useEffect(() => {
+    const handleCustomizerEvent = () => {
+      audioContext?.playClickSound();
+      setIsCustomizerOpen(true);
+    };
+
+    window.addEventListener('openCustomizer', handleCustomizerEvent);
+    return () => window.removeEventListener('openCustomizer', handleCustomizerEvent);
+  }, [audioContext]);
 
   useEffect(() => {
     const initAudio = () => {
@@ -605,19 +631,6 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
           {/* View Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3" role="toolbar" aria-label="View and cart controls">
             <h3 className="sr-only">View Options</h3>
-            
-            {/* Background Customizer Button */}
-            <button
-              onClick={() => {
-                audioContext?.playClickSound();
-                setIsCustomizerOpen(true);
-              }}
-              aria-label="Customize background"
-              className="bg-white/10 backdrop-blur-2xl rounded-full p-2 sm:p-3 border border-white/15 text-white hover:bg-white/15 transition-all duration-400 ease-out shadow-2xl transform hover:scale-[1.01] active:scale-[0.99]"
-            >
-              <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            
             <div className="flex space-x-1 sm:space-x-2 bg-white/10 backdrop-blur-2xl rounded-full p-1 sm:p-2 border border-white/15 shadow-2xl">
               <button
                 onClick={toggleViewMode}

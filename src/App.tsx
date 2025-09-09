@@ -84,26 +84,48 @@ const HomeSection = () => (
     {/* Floating 3D Object */}
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="relative">
-        {/* Main 3D Cube */}
-        <div className="w-32 h-32 lg:w-48 lg:h-48 relative transform-gpu animate-float">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl transform rotate-12 hover:rotate-6 transition-transform duration-1000 ease-out">
-            <div className="absolute inset-4 bg-gradient-to-tr from-blue-400/30 to-purple-500/30 rounded-2xl animate-pulse"></div>
+        {/* Modern 3D Structure */}
+        <div className="w-48 h-48 lg:w-72 lg:h-72 relative transform-gpu animate-float">
+          {/* Main geometric shape */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/25 to-purple-600/20 backdrop-blur-2xl rounded-[2rem] border border-white/25 shadow-2xl transform rotate-12 transition-all duration-2000 ease-out">
+            <div className="absolute inset-6 bg-gradient-to-tr from-blue-500/40 to-violet-500/40 rounded-2xl animate-pulse">
+              <div className="absolute inset-4 bg-gradient-to-bl from-white/20 to-transparent rounded-xl"></div>
+            </div>
+            {/* Inner glow */}
+            <div className="absolute inset-8 bg-gradient-to-r from-cyan-300/30 to-purple-400/30 rounded-xl blur-sm animate-pulse delay-500"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-tl from-white/15 to-white/5 backdrop-blur-xl rounded-3xl border border-white/15 shadow-xl transform -rotate-6 hover:rotate-0 transition-transform duration-1000 ease-out delay-200">
-            <div className="absolute inset-4 bg-gradient-to-bl from-purple-400/30 to-pink-500/30 rounded-2xl animate-pulse delay-300"></div>
+          
+          {/* Secondary layer */}
+          <div className="absolute inset-0 bg-gradient-to-tl from-pink-400/20 to-blue-500/15 backdrop-blur-2xl rounded-[2rem] border border-white/20 shadow-xl transform -rotate-6 transition-all duration-2000 ease-out delay-300">
+            <div className="absolute inset-6 bg-gradient-to-bl from-purple-500/35 to-pink-500/35 rounded-2xl animate-pulse delay-700">
+              <div className="absolute inset-4 bg-gradient-to-tr from-white/15 to-transparent rounded-xl"></div>
+            </div>
+            {/* Inner glow */}
+            <div className="absolute inset-8 bg-gradient-to-l from-pink-300/25 to-blue-400/25 rounded-xl blur-sm animate-pulse delay-1000"></div>
+          </div>
+          
+          {/* Tertiary accent layer */}
+          <div className="absolute inset-4 bg-gradient-to-br from-emerald-400/15 to-cyan-500/10 backdrop-blur-xl rounded-3xl border border-white/15 shadow-lg transform rotate-3 transition-all duration-2000 ease-out delay-600">
+            <div className="absolute inset-4 bg-gradient-to-tr from-emerald-400/30 to-cyan-400/30 rounded-2xl animate-pulse delay-1200"></div>
           </div>
         </div>
         
-        {/* Floating Particles */}
-        <div className="absolute -top-8 -left-8 w-4 h-4 bg-white/40 rounded-full animate-bounce delay-100"></div>
-        <div className="absolute -bottom-6 -right-6 w-3 h-3 bg-white/30 rounded-full animate-bounce delay-500"></div>
-        <div className="absolute top-12 -right-12 w-2 h-2 bg-white/50 rounded-full animate-bounce delay-700"></div>
+        {/* Enhanced Floating Particles */}
+        <div className="absolute -top-12 -left-12 w-6 h-6 bg-gradient-to-r from-cyan-400/60 to-blue-500/60 rounded-full animate-bounce delay-100 shadow-lg"></div>
+        <div className="absolute -bottom-8 -right-8 w-4 h-4 bg-gradient-to-r from-purple-400/50 to-pink-500/50 rounded-full animate-bounce delay-500 shadow-md"></div>
+        <div className="absolute top-16 -right-16 w-3 h-3 bg-gradient-to-r from-emerald-400/70 to-cyan-400/70 rounded-full animate-bounce delay-700 shadow-sm"></div>
+        <div className="absolute -top-6 right-20 w-2 h-2 bg-white/60 rounded-full animate-bounce delay-300"></div>
+        <div className="absolute bottom-20 -left-6 w-5 h-5 bg-gradient-to-r from-violet-400/40 to-purple-500/40 rounded-full animate-bounce delay-900 shadow-md"></div>
+        
+        {/* Orbital rings */}
+        <div className="absolute inset-0 border border-white/10 rounded-full animate-spin" style={{ animationDuration: '20s' }}></div>
+        <div className="absolute inset-8 border border-cyan-400/20 rounded-full animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }}></div>
       </div>
     </div>
 
     {/* Content */}
     <div className="text-center z-10 max-w-2xl mx-auto">
-      <h1 className="text-5xl lg:text-7xl font-black text-white mb-6 tracking-tight">
+      <h1 className="text-6xl lg:text-8xl text-white mb-6 tracking-wider" style={{ fontFamily: 'Anton, sans-serif' }}>
         <span className="bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent">
           VirtualFit
         </span>

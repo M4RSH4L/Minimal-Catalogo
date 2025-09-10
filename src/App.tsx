@@ -1,81 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useRef } from 'react';
-import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2, Settings, Palette, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Grid3X3, List, User, X, Plus, Minus, MessageCircle, Trash2, Settings, Palette, Check, LogIn, LogOut, Shield } from 'lucide-react';
+import { useSupabaseAuth } from './hooks/useSupabaseAuth';
+import { useProducts } from './hooks/useProducts';
+import { AuthModal } from './components/AuthModal';
+import { AdminPanel } from './components/AdminPanel';
 
 interface AppProps {
   backgroundUrl?: string;
 }
 
-interface Product {
-  id: number;
+interface CartItem {
+  id: string;
   name: string;
   price: number;
-  image: string;
-  category: string;
-  color: string;
-  size: string;
-}
-
-interface CartItem extends Product {
+  image_url?: string;
   quantity: number;
 }
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Basic T-shirt",
-    price: 105,
-    image: "https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "White",
-    size: "M"
-  },
-  {
-    id: 2,
-    name: "Basic Sweater",
-    price: 105,
-    image: "https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "Gray",
-    size: "L"
-  },
-  {
-    id: 3,
-    name: "Basic Shirt",
-    price: 105,
-    image: "https://images.pexels.com/photos/6311392/pexels-photo-6311392.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "White",
-    size: "M"
-  },
-  {
-    id: 4,
-    name: "Premium Hoodie",
-    price: 125,
-    image: "https://images.pexels.com/photos/8532617/pexels-photo-8532617.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "Black",
-    size: "L"
-  },
-  {
-    id: 5,
-    name: "Casual Tee",
-    price: 95,
-    image: "https://images.pexels.com/photos/7679721/pexels-photo-7679721.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "Navy",
-    size: "S"
-  },
-  {
-    id: 6,
-    name: "Denim Jacket",
-    price: 145,
-    image: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Top Body",
-    color: "Blue",
-    size: "M"
-  }
-];
 
 const categories = ["Full body", "Top Body", "Head", "Pants", "Foot"];
 
@@ -200,6 +141,8 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [currentBackground, setCurrentBackground] = useState(backgroundUrl || "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1920");
   const [backgroundInput, setBackgroundInput] = useState("");
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   // Touch/swipe state
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -208,6 +151,10 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Hooks
+  const { user, role, loading: authLoading, signOut } = useSupabaseAuth();
+  const { products, loading: productsLoading } = useProducts();
 
   // Handle customizer event from Home section
   useEffect(() => {
@@ -324,7 +271,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   };
 
   const nextProduct = () => {
-    if (isTransitioning) return;
+    if (isTransitioning || products.length === 0) return;
     audioContext?.playSlideSound();
     setSlideDirection('right');
     setIsTransitioning(true);
@@ -340,7 +287,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   };
 
   const prevProduct = () => {
-    if (isTransitioning) return;
+    if (isTransitioning || products.length === 0) return;
     audioContext?.playSlideSound();
     setSlideDirection('left');
     setIsTransitioning(true);
@@ -356,7 +303,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
   };
 
   const goToProduct = (index: number) => {
-    if (isTransitioning || index === currentIndex) return;
+    if (isTransitioning || index === currentIndex || products.length === 0) return;
     audioContext?.playDotSound();
     const direction = index > currentIndex ? 'right' : 'left';
     setSlideDirection(direction);
@@ -377,7 +324,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     setViewMode(prev => prev === 'carousel' ? 'grid' : 'carousel');
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: any) => {
     audioContext?.playCartSound();
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
@@ -388,16 +335,22 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
             : item
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [...prevCart, { 
+        id: product.id, 
+        name: product.name, 
+        price: product.price, 
+        image_url: product.image_url, 
+        quantity: 1 
+      }];
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string) => {
     audioContext?.playRemoveSound();
     setCart(prevCart => prevCart.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = (productId: number, newQuantity: number) => {
+  const updateQuantity = (productId: string, newQuantity: number) => {
     audioContext?.playCartSound();
     if (newQuantity <= 0) {
       removeFromCart(productId);
@@ -420,13 +373,13 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const sendToWhatsApp = (product?: Product) => {
+  const sendToWhatsApp = (product?: any) => {
     audioContext?.playWhatsAppSound();
     const phoneNumber = "1234567890"; // Replace with your WhatsApp number
     let message = "";
     
     if (product) {
-      message = `Hola! Me interesa este producto:\n\n${product.name}\nPrecio: $${product.price}\nColor: ${product.color}\nTalla: ${product.size}`;
+      message = `Hola! Me interesa este producto:\n\n${product.name}\nPrecio: $${product.price}`;
     } else if (cart.length > 0) {
       message = "Hola! Me interesan estos productos:\n\n";
       cart.forEach(item => {
@@ -481,14 +434,31 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
     }
   ];
 
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut();
+      setShowAdminPanel(false);
+    } else {
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+        <div className="text-white text-xl">Cargando...</div>
+      </div>
+    );
+  }
+
   const currentProduct = products[currentIndex];
-  const sideProducts = [
+  const sideProducts = products.length > 0 ? [
     products[(currentIndex - 1 + products.length) % products.length],
     products[(currentIndex + 1) % products.length]
-  ];
+  ] : [];
 
-  const ProductCard = ({ product, isMain = false, onClick, index }: { 
-    product: Product; 
+  const ProductCard = ({ product, isMain = false, onClick, index }: {
+    product: any;
     isMain?: boolean; 
     onClick?: () => void;
     index?: number;
@@ -522,7 +492,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
             isMain ? 'mb-6' : 'mb-3'
           }`}>
             <img 
-              src={product.image} 
+              src={product.image_url || 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400'} 
               alt={product.name}
               className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-110"
             />
@@ -545,12 +515,8 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
               <React.Fragment>
                 <div className="flex justify-center space-x-3 lg:space-x-4 text-sm mb-6">
                   <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 lg:px-4 py-2 border border-white/20 transform hover:scale-105 transition-all duration-300 ease-out shadow-md">
-                    <span className="text-white/80">Size: </span>
-                    <span className="text-white font-medium">{product.size}</span>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 lg:px-4 py-2 border border-white/20 transform hover:scale-105 transition-all duration-300 ease-out shadow-md">
-                    <span className="text-white/80">Color: </span>
-                    <span className="text-white font-medium">{product.color}</span>
+                    <span className="text-white/80">Stock: </span>
+                    <span className="text-white font-medium">{product.stock}</span>
                   </div>
                 </div>
                 
@@ -631,6 +597,31 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
           {/* View Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3" role="toolbar" aria-label="View and cart controls">
             <h3 className="sr-only">View Options</h3>
+            
+            {/* Auth Button */}
+            <button
+              onClick={handleAuthAction}
+              className="bg-white/10 backdrop-blur-2xl rounded-full px-3 sm:px-6 py-2 sm:py-3 border border-white/15 text-white font-medium hover:bg-white/15 transition-all duration-400 ease-out flex items-center space-x-1 sm:space-x-2 shadow-2xl transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              {user ? <LogOut className="w-4 h-4 sm:w-5 sm:h-5" /> : <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />}
+              <span className="hidden sm:inline text-sm sm:text-base">
+                {user ? 'Salir' : 'Iniciar sesión'}
+              </span>
+            </button>
+
+            {/* Admin Panel Button */}
+            {role === 'admin' && (
+              <button
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                className="bg-white/10 backdrop-blur-2xl rounded-full px-3 sm:px-6 py-2 sm:py-3 border border-white/15 text-white font-medium hover:bg-white/15 transition-all duration-400 ease-out flex items-center space-x-1 sm:space-x-2 shadow-2xl transform hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline text-sm sm:text-base">
+                  {showAdminPanel ? 'Catálogo' : 'Admin'}
+                </span>
+              </button>
+            )}
+            
             <div className="flex space-x-1 sm:space-x-2 bg-white/10 backdrop-blur-2xl rounded-full p-1 sm:p-2 border border-white/15 shadow-2xl">
               <button
                 onClick={toggleViewMode}
@@ -679,12 +670,29 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
 
         {/* Main Content Area */}
         <main className="flex-1 flex items-center justify-center px-4 sm:px-8" role="main">
-          {selectedCategory === "Home" ? (
+          {showAdminPanel && role === 'admin' ? (
+            <AdminPanel />
+          ) : selectedCategory === "Home" ? (
             <HomeSection />
           ) : (
             <>
               <h2 className="sr-only">{selectedCategory} Products Catalog</h2>
-              {viewMode === 'carousel' ? (
+              {productsLoading ? (
+                <div className="text-white text-xl">Cargando productos...</div>
+              ) : products.length === 0 ? (
+                <div className="text-center">
+                  <div className="text-white text-xl mb-4">No hay productos disponibles</div>
+                  {role === 'admin' && (
+                    <button
+                      onClick={() => setShowAdminPanel(true)}
+                      className="bg-white/15 backdrop-blur-xl rounded-full px-6 py-3 border border-white/20 text-white font-medium hover:bg-white/20 transition-all duration-300"
+                    >
+                      Ir al Panel Admin
+                    </button>
+                  )}
+                </div>
+              ) : (
+              viewMode === 'carousel' ? (
             /* Carousel View */
             <section className="flex items-center justify-center space-x-2 sm:space-x-8 max-w-7xl w-full" aria-label="Product carousel">
               
@@ -782,7 +790,7 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                     <div className="bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-4 sm:p-6 shadow-2xl transform transition-all duration-400 ease-out hover:bg-white/12 hover:shadow-3xl">
                       <div className="aspect-square bg-white/8 rounded-2xl mb-4 overflow-hidden relative group">
                         <img 
-                          src={product.image} 
+                          src={product.image_url || 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400'} 
                           alt={product.name}
                           className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110"
                         />
@@ -797,12 +805,8 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                         
                         <div className="flex justify-center space-x-2 text-xs mb-4">
                           <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 border border-white/20 transform hover:scale-105 transition-all duration-300 ease-out">
-                            <span className="text-white/80">Size: </span>
-                            <span className="text-white font-medium">{product.size}</span>
-                          </div>
-                          <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 border border-white/20 transform hover:scale-105 transition-all duration-300 ease-out">
-                            <span className="text-white/80">Color: </span>
-                            <span className="text-white font-medium">{product.color}</span>
+                            <span className="text-white/80">Stock: </span>
+                            <span className="text-white font-medium">{product.stock}</span>
                           </div>
                         </div>
                         
@@ -828,13 +832,14 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                 ))}
               </div>
             </section>
+              )
               )}
             </>
           )}
         </main>
 
         {/* Bottom Navigation Dots - Only show in carousel mode */}
-        {viewMode === 'carousel' && selectedCategory !== "Home" && (
+        {viewMode === 'carousel' && selectedCategory !== "Home" && !showAdminPanel && products.length > 0 && (
           <nav className="flex justify-center space-x-2 pb-6 sm:pb-8 px-4" aria-label="Product navigation" role="tablist">
             <h3 className="sr-only">Product Navigation Dots</h3>
             {products.map((_, index) => (
@@ -986,13 +991,12 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
                    
                       <div className="flex items-center space-x-4">
                         <img
-                          src={item.image}
+                          src={item.image_url || 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=400'}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded-xl"
                         />
                         <div className="flex-1">
                           <h4 className="text-white font-medium">{item.name}</h4>
-                          <p className="text-white/70 text-sm">{item.color} • {item.size}</p>
                           <p className="text-white font-bold">${item.price}</p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1046,6 +1050,12 @@ function App({ backgroundUrl = "https://images.pexels.com/photos/1571460/pexels-
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
 
       <style jsx>{`
         @keyframes fadeInUp {

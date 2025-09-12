@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Package, DollarSign, Hash, Image } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Package, DollarSign, Hash, Image, Upload, User, Settings } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
+import { useAdminProfile } from '../hooks/useAdminProfile';
 import { Product } from '../lib/supabase';
+import { ProductUploadModal } from './ProductUploadModal';
+import { AdminProfileSetup } from './AdminProfileSetup';
 
 export function AdminPanel() {
   const { products, loading, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { profile, loading: profileLoading } = useAdminProfile();
   const [showForm, setShowForm] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -67,19 +73,81 @@ export function AdminPanel() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white flex items-center space-x-2">
-          <Package className="w-8 h-8" />
-          <span>Panel de Administración</span>
-        </h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-white/15 backdrop-blur-xl rounded-full px-6 py-3 border border-white/20 text-white font-medium hover:bg-white/20 transition-all duration-300 flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Nuevo Producto</span>
-        </button>
+      {/* Header with Profile */}
+      <div className="mb-8">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center space-x-2 mb-2">
+              <Package className="w-8 h-8" />
+              <span>Panel de Administración</span>
+            </h1>
+            {profile && (
+              <div className="flex items-center space-x-3 text-white/70">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                </div>
+                <span>Bienvenido, {profile.username}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex space-x-3">
+            {!profile && !profileLoading && (
+              <button
+                onClick={() => setShowProfileSetup(true)}
+                className="bg-blue-500/20 backdrop-blur-xl rounded-full px-4 py-2 border border-blue-400/30 text-white font-medium hover:bg-blue-500/30 transition-all duration-300 flex items-center space-x-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Configurar Perfil</span>
+              </button>
+            )}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-xl rounded-full px-6 py-3 border border-white/20 text-white font-medium hover:from-green-500/30 hover:to-blue-500/30 transition-all duration-300 flex items-center space-x-2"
+            >
+              <Upload className="w-5 h-5" />
+              <span>Subir Producto</span>
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-white/15 backdrop-blur-xl rounded-full px-6 py-3 border border-white/20 text-white font-medium hover:bg-white/20 transition-all duration-300 flex items-center space-x-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Crear Manual</span>
+            </button>
+          </div>
+        </div>
+        
+        {profile && (
+          <button
+            onClick={() => setShowProfileSetup(true)}
+            className="text-white/50 hover:text-white/70 transition-colors duration-300 text-sm flex items-center space-x-1"
+          >
+            <Settings className="w-3 h-3" />
+            <span>Editar perfil</span>
+          </button>
+        )}
       </div>
+
+      {/* Modals */}
+      <ProductUploadModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+      />
+      
+      <AdminProfileSetup 
+        isOpen={showProfileSetup} 
+        onClose={() => setShowProfileSetup(false)}
+        onComplete={() => {}}
+      />
 
       {/* Product Form Modal */}
       {showForm && (
@@ -87,7 +155,7 @@ export function AdminPanel() {
           <div className="bg-white/12 backdrop-blur-2xl rounded-3xl border border-white/25 p-6 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">
-                {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                {editingProduct ? 'Editar Producto' : 'Crear Producto Manual'}
               </h2>
               <button
                 onClick={resetForm}
@@ -177,7 +245,7 @@ export function AdminPanel() {
         {products.map((product) => (
           <div
             key={product.id}
-            className="bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-6 shadow-2xl"
+            className="bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-6 shadow-2xl hover:bg-white/12 transition-all duration-300"
           >
             {product.image_url && (
               <div className="aspect-square bg-white/8 rounded-2xl mb-4 overflow-hidden">
@@ -196,6 +264,12 @@ export function AdminPanel() {
               <p className="text-white/50 text-sm">
                 Creado: {new Date(product.created_at).toLocaleDateString()}
               </p>
+              {product.created_by && profile && (
+                <div className="flex items-center space-x-2 text-white/40 text-xs">
+                  <User className="w-3 h-3" />
+                  <span>Por {profile.username}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex space-x-2 mt-4">
@@ -222,7 +296,7 @@ export function AdminPanel() {
         <div className="text-center py-12">
           <Package className="w-16 h-16 text-white/50 mx-auto mb-4" />
           <p className="text-white/70 text-lg">No hay productos creados</p>
-          <p className="text-white/50">Haz clic en "Nuevo Producto" para comenzar</p>
+          <p className="text-white/50">Haz clic en "Subir Producto" para comenzar</p>
         </div>
       )}
     </div>

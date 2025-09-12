@@ -26,9 +26,16 @@ export function useProducts() {
 
   const createProduct = async (product: Omit<Product, 'id' | 'created_at'>) => {
     try {
+      // Get current user ID for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([{
+          ...product,
+          created_by: user?.id,
+          updated_by: user?.id
+        }])
         .select()
         .single();
 
@@ -43,9 +50,15 @@ export function useProducts() {
 
   const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id' | 'created_at'>>) => {
     try {
+      // Get current user ID for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('products')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_by: user?.id
+        })
         .eq('id', id)
         .select()
         .single();

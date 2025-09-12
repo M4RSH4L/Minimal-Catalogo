@@ -26,6 +26,14 @@ export interface UserRole {
   created_at: string;
 }
 
+export interface AdminProfile {
+  user_id: string;
+  username: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -38,6 +46,11 @@ export interface Database {
         Row: UserRole;
         Insert: Omit<UserRole, 'created_at'>;
         Update: Partial<Omit<UserRole, 'created_at'>>;
+      };
+      admin_profiles: {
+        Row: AdminProfile;
+        Insert: Omit<AdminProfile, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AdminProfile, 'user_id' | 'created_at' | 'updated_at'>>;
       };
     };
   };

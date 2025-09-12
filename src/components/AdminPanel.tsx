@@ -15,13 +15,14 @@ export function AdminPanel() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     price: '',
     stock: '',
     image_url: '',
   });
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', stock: '', image_url: '' });
+    setFormData({ name: '', description: '', price: '', stock: '', image_url: '' });
     setEditingProduct(null);
     setShowForm(false);
   };
@@ -31,6 +32,7 @@ export function AdminPanel() {
     
     const productData = {
       name: formData.name,
+      description: formData.description || null,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
       image_url: formData.image_url || null,
@@ -50,6 +52,7 @@ export function AdminPanel() {
     setEditingProduct(product);
     setFormData({
       name: product.name,
+      description: product.description || '',
       price: product.price.toString(),
       stock: product.stock.toString(),
       image_url: product.image_url || '',
@@ -182,6 +185,20 @@ export function AdminPanel() {
               </div>
 
               <div>
+                <label className="block text-white font-medium mb-2">Descripción</label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-3 w-5 h-5 text-white/50" />
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full bg-white/10 backdrop-blur-xl rounded-2xl px-12 py-3 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 resize-none"
+                    placeholder="Descripción del producto"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-white font-medium mb-2">Precio</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
@@ -259,6 +276,9 @@ export function AdminPanel() {
             
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-white">{product.name}</h3>
+              {product.description && (
+                <p className="text-white/60 text-sm line-clamp-2">{product.description}</p>
+              )}
               <p className="text-2xl font-bold text-white">${product.price}</p>
               <p className="text-white/70">Stock: {product.stock}</p>
               <p className="text-white/50 text-sm">

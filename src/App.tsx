@@ -192,6 +192,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isMain = false, onAd
       <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
         <div>
           <h3 className="text-lg sm:text-xl font-bold text-white mb-1 line-clamp-2">{product.name}</h3>
+          {product.description && (
+            <p className="text-white/60 text-sm mb-2 line-clamp-2">{product.description}</p>
+          )}
           <p className="text-2xl sm:text-3xl font-bold text-white">${product.price}</p>
         </div>
 
